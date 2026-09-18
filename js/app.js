@@ -137,14 +137,17 @@
       toast("Минимум 10 ₽");
       return;
     }
+    amount = Math.round(amount);
     var res = $("topupResult");
     if (METHOD === "stars") {
+      var deep = "https://t.me/" + BOT + "?start=topup_" + amount;
       res.classList.remove("hidden");
       res.innerHTML =
-        "<p><b>Пополнение звёздами Telegram</b></p>" +
-        '<p class="muted" style="margin:10px 0">В боте: «Мой баланс» → пополнить. Оплата только Stars.</p>' +
-        '<a class="btn btn-main" href="https://t.me/' + BOT + '?start=topup" target="_blank" rel="noopener">Открыть @' + BOT + "</a>";
-      toast("Перейдите в бота");
+        "<p><b>Пополнение " + formatMoney(amount) + " звёздами</b></p>" +
+        '<p class="muted" style="margin:10px 0">Бот сразу откроет оплату на эту сумму. Нажмите Start в боте.</p>' +
+        '<a class="btn btn-main" href="' + deep + '" target="_blank" rel="noopener">Оплатить ' + formatMoney(amount) + ' в боте</a>';
+      toast("Откройте бота — там счёт на " + amount + " ₽");
+      window.open(deep, "_blank");
       return;
     }
     var names = { sbp: "СБП", google_pay: "Google Pay", apple_pay: "Apple Pay" };
