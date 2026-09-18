@@ -1,0 +1,2 @@
+index.html содержит CSS+JS внутри. Стили не зависят от /css/ и /js/.
+API всё равно нужен: python site_app.py
