@@ -1,573 +1,240 @@
-let CFG = {};
-let ME = null;
-let PRODUCTS = [];
-let CURRENT = null;
-let CURRENCY = localStorage.getItem("nexven_currency") || "RUB";
-let SELECTED_METHOD = "stars";
+(function () {
+  "use strict";
 
-const RATES = { RUB: 1, UAH: 0.54, KZT: 5.5, BYN: 0.036 };
-const SYMBOLS = { RUB: "₽", UAH: "₴", KZT: "₸", BYN: "Br" };
-const TOPUP_PRESETS = [25, 50, 100, 200, 500, 1000];
+  const BOT = "nexvenstudiobot";
+  const MANAGER = "nexvenstudiomanager";
+  const RATES = { RUB: 1, UAH: 0.54, KZT: 5.5, BYN: 0.036 };
+  const SYMBOLS = { RUB: "₽", UAH: "₴", KZT: "₸", BYN: "Br" };
+  const PRESETS = [25, 50, 100, 200, 500, 1000];
 
-function toast(msg) {
-  const el = document.getElementById("toast");
-  if (!el) return;
-  el.textContent = msg;
-  el.style.display = "block";
-  setTimeout(() => { el.style.display = "none"; }, 3500);
-}
+  const PRODUCTS = [
+    { id: "bot", name: "Заказать бота", price: 105, description: "Бот будет сделан по вашему описанию и требованиям.", category: "catalog" },
+    { id: "site", name: "Заказать сайт", price: 210, description: "Сайт будет сверстан и настроен по вашему ТЗ.", category: "catalog" },
+    { id: "prompt", name: "Обучение по промпту для ИИ", price: 25, description: "Обучение по промптам для ИИ — материалы после оплаты.", category: "catalog" },
+    { id: "project_crmp", name: "Создать проект CRMP", price: 300, description: "Проект CRMP по вашему ТЗ: системы, моды, оформление.", category: "project" },
+    { id: "project_samp", name: "Создать проект SAMP", price: 300, description: "Проект SAMP по вашему ТЗ: системы, моды, оформление.", category: "project" },
+    { id: "mod_blackrussia", name: "Мод Black Russia (CRMP)", price: 150, description: "Мод для Black Russia — настройка по вашему описанию.", category: "mod" },
+    { id: "mod_arizona", name: "Мод Arizona RP (SAMP)", price: 250, description: "Мод для Arizona RP — настройка по вашему описанию.", category: "mod" },
+  ];
 
-async function api(url, opts = {}) {
-  try {
-    const res = await fetch(url, {
-      headers: { "Content-Type": "application/json", ...(opts.headers || {}) },
-      credentials: "same-origin",
-      ...opts,
+  let CURRENCY = localStorage.getItem("nexven_currency") || "RUB";
+  let METHOD = "stars";
+  let CURRENT = null;
+
+  function $(id) { return document.getElementById(id); }
+
+  function toast(msg) {
+    const el = $("toast");
+    if (!el) return;
+    el.textContent = msg;
+    el.style.display = "block";
+    setTimeout(function () { el.style.display = "none"; }, 3500);
+  }
+
+  function formatMoney(rub) {
+    const rate = RATES[CURRENCY] || 1;
+    const val = Number(rub || 0) * rate;
+    const sym = SYMBOLS[CURRENCY] || "₽";
+    if (CURRENCY === "BYN") return val.toFixed(2) + " " + sym;
+    return Math.round(val) + " " + sym;
+  }
+
+  function escapeHtml(s) {
+    return String(s || "").replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
     });
-    const data = await res.json().catch(() => ({ ok: false, error: "Ошибка сервера" }));
-    if (!res.ok && !data.error) data.error = "Ошибка " + res.status;
-    return data;
-  } catch (e) {
-    return { ok: false, error: "Нет связи с сервером. Запустите site_app.py" };
   }
-}
 
-function formatMoney(rub) {
-  const rate = RATES[CURRENCY] || 1;
-  const val = Number(rub || 0) * rate;
-  const sym = SYMBOLS[CURRENCY] || "₽";
-  if (CURRENCY === "BYN") return val.toFixed(2) + " " + sym;
-  return Math.round(val) + " " + sym;
-}
-
-function showPage(name) {
-  document.querySelectorAll("main > section").forEach((s) => s.classList.add("hidden"));
-  const page = document.getElementById("page-" + name);
-  if (page) page.classList.remove("hidden");
-  if (name === "login") renderLogin();
-  if (name === "orders") renderOrders();
-  if (name === "refs") renderRefs();
-  if (name === "admin") renderAdmin();
-  if (name === "topup") renderTopup();
-}
-
-window.onTelegramAuth = async function (user) {
-  const data = await api("/api/auth/telegram", { method: "POST", body: JSON.stringify(user) });
-  if (!data.ok) {
-    toast(data.error || "Не удалось войти");
-    return;
+  function showPage(name) {
+    document.querySelectorAll("main > section").forEach(function (s) {
+      s.classList.add("hidden");
+    });
+    var page = $("page-" + name);
+    if (page) page.classList.remove("hidden");
+    if (name === "topup") renderTopup();
+    if (name === "catalog" || name === "projects" || name === "mods") renderGrids();
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }
-  ME = data.user;
-  if (ME.currency) {
-    CURRENCY = ME.currency;
-    localStorage.setItem("nexven_currency", CURRENCY);
+
+  function paintBalance() {
+    var bal = $("balanceValue");
+    if (bal) bal.textContent = "в боте · " + (SYMBOLS[CURRENCY] || "₽");
+    var sel = $("currencySelect");
+    if (sel) sel.value = CURRENCY;
   }
-  paintUser();
-  showPage("catalog");
-  toast("Вход выполнен");
-  syncFirebaseUser(ME);
-};
 
-function renderLogin() {
-  const box = document.getElementById("tg-widget");
-  if (!box) return;
-  box.innerHTML = "";
-  const s = document.createElement("script");
-  s.async = true;
-  s.src = "https://telegram.org/js/telegram-widget.js?22";
-  s.setAttribute("data-telegram-login", CFG.bot_username || "nexvenstudiobot");
-  s.setAttribute("data-size", "large");
-  s.setAttribute("data-radius", "12");
-  s.setAttribute("data-onauth", "onTelegramAuth(user)");
-  s.setAttribute("data-request-access", "write");
-  box.appendChild(s);
-}
-
-function paintUser() {
-  const box = document.getElementById("userbox");
-  const adminBtn = document.getElementById("adminBtn");
-  const balEl = document.getElementById("balanceValue");
-  const curSel = document.getElementById("currencySelect");
-  if (curSel) curSel.value = CURRENCY;
-
-  if (!ME) {
-    if (box) box.innerHTML = `<button type="button" class="btn btn-main" data-page="login">Войти через Telegram</button>`;
-    if (adminBtn) adminBtn.classList.add("hidden");
-    if (balEl) balEl.textContent = "— " + (SYMBOLS[CURRENCY] || "₽");
-    return;
+  function cardHtml(p) {
+    return (
+      '<article class="card">' +
+      '<div class="pic"><div class="ph steel">' + escapeHtml((p.name || "").slice(0, 18)) + "</div></div>" +
+      '<div class="body">' +
+      "<h3>" + escapeHtml(p.name) + "</h3>" +
+      '<div class="price">' + formatMoney(p.price) + "</div>" +
+      '<div class="muted">' + escapeHtml(p.description || "") + "</div>" +
+      '<button type="button" class="btn btn-main" data-order="' + escapeHtml(p.id) + '">Заказать</button>' +
+      "</div></article>"
+    );
   }
-  const photo = ME.photo_url ? `<img src="${ME.photo_url}" alt="">` : "";
-  if (box) {
-    box.innerHTML = `
-      ${photo}
-      <span>@${ME.username || ME.user_id}<br><b>${formatMoney(ME.balance)}</b></span>
-      <button type="button" class="ghost" id="btnLogout">Выйти</button>`;
-    const lo = document.getElementById("btnLogout");
-    if (lo) lo.addEventListener("click", logout);
+
+  function renderGrids() {
+    var cat = PRODUCTS.filter(function (p) { return p.category === "catalog"; });
+    var proj = PRODUCTS.filter(function (p) { return p.category === "project"; });
+    var mods = PRODUCTS.filter(function (p) { return p.category === "mod"; });
+    var gc = $("grid-catalog");
+    var gp = $("grid-projects");
+    var gm = $("grid-mods");
+    if (gc) gc.innerHTML = cat.map(cardHtml).join("");
+    if (gp) gp.innerHTML = proj.map(cardHtml).join("");
+    if (gm) gm.innerHTML = mods.map(cardHtml).join("");
   }
-  if (adminBtn) {
-    if (ME.is_admin) adminBtn.classList.remove("hidden");
-    else adminBtn.classList.add("hidden");
+
+  function openOrder(id) {
+    CURRENT = PRODUCTS.find(function (p) { return p.id === id; });
+    if (!CURRENT) return;
+    $("mTitle").textContent = CURRENT.name;
+    $("mDesc").textContent = CURRENT.description || "";
+    $("mPrice").textContent = formatMoney(CURRENT.price);
+    $("mText").value = "";
+    $("orderModal").classList.add("show");
   }
-  if (balEl) balEl.textContent = formatMoney(ME.balance);
-}
 
-async function logout() {
-  await api("/api/auth/logout", { method: "POST" });
-  ME = null;
-  paintUser();
-  showPage("home");
-}
-
-function escapeHtml(s) {
-  return String(s || "").replace(/[&<>"']/g, (c) => ({
-    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
-  }[c]));
-}
-
-function cardHtml(p) {
-  const img = p.image_url
-    ? `<img src="${p.image_url}" alt="${escapeHtml(p.name)}">`
-    : `<div class="ph steel">${escapeHtml((p.name || "").slice(0, 18))}</div>`;
-  return `
-    <article class="card">
-      <div class="pic">${img}</div>
-      <div class="body">
-        <h3>${escapeHtml(p.name)}</h3>
-        <div class="price">${formatMoney(p.price)}</div>
-        <div class="muted">${escapeHtml(p.description || "")}</div>
-        <button type="button" class="btn btn-main" data-order="${escapeHtml(p.id)}">Заказать</button>
-      </div>
-    </article>`;
-}
-
-function renderGrids() {
-  const cat = PRODUCTS.filter((p) => p.category === "catalog");
-  const proj = PRODUCTS.filter((p) => p.category === "project");
-  const mods = PRODUCTS.filter((p) => p.category === "mod");
-  const gc = document.getElementById("grid-catalog");
-  const gp = document.getElementById("grid-projects");
-  const gm = document.getElementById("grid-mods");
-  if (gc) gc.innerHTML = cat.map(cardHtml).join("") || `<p class="muted">Нет товаров</p>`;
-  if (gp) gp.innerHTML = proj.map(cardHtml).join("") || `<p class="muted">Нет проектов</p>`;
-  if (gm) gm.innerHTML = mods.map(cardHtml).join("") || `<p class="muted">Нет модов</p>`;
-}
-
-function openOrder(id) {
-  if (!ME) {
-    showPage("login");
-    toast("Сначала войдите через Telegram");
-    return;
+  function closeModal() {
+    $("orderModal").classList.remove("show");
   }
-  CURRENT = PRODUCTS.find((p) => p.id === id);
-  if (!CURRENT) return;
-  document.getElementById("mTitle").textContent = CURRENT.name;
-  document.getElementById("mDesc").textContent = CURRENT.description || "";
-  document.getElementById("mPrice").textContent = formatMoney(CURRENT.price);
-  document.getElementById("mText").value = "";
-  document.getElementById("orderModal").classList.add("show");
-}
 
-function closeModal() {
-  document.getElementById("orderModal").classList.remove("show");
-}
-
-async function submitOrder() {
-  if (!CURRENT) return;
-  const description = document.getElementById("mText").value.trim();
-  const data = await api("/api/orders", {
-    method: "POST",
-    body: JSON.stringify({ product_id: CURRENT.id, description }),
-  });
-  if (!data.ok) {
-    toast(data.error || "Не вышло оформить");
-    return;
+  function submitOrder() {
+    if (!CURRENT) return;
+    var desc = ($("mText").value || "").trim();
+    if (desc.length < 5) {
+      toast("Опишите заказ (минимум 5 символов)");
+      return;
+    }
+    var text =
+      "Заказ: " + CURRENT.name + "\n" +
+      "Цена: " + CURRENT.price + " ₽\n" +
+      "Описание:\n" + desc;
+    var url = "https://t.me/" + BOT + "?text=" + encodeURIComponent(text);
+    window.open(url, "_blank");
+    closeModal();
+    toast("Откройте бота и отправьте заказ");
   }
-  ME.balance = data.balance;
-  paintUser();
-  closeModal();
-  toast("Заказ #" + data.order_id + " создан");
-  showPage("orders");
-}
 
-async function renderOrders() {
-  const box = document.getElementById("ordersPanel");
-  if (!box) return;
-  if (!ME) {
-    box.textContent = "Войдите через Telegram.";
-    return;
+  function renderTopup() {
+    var presets = $("amountPresets");
+    if (presets) {
+      presets.innerHTML = PRESETS.map(function (a) {
+        return '<button type="button" class="ghost amt-btn" data-amt="' + a + '">' + formatMoney(a) + "</button>";
+      }).join("");
+    }
+    document.querySelectorAll(".pay-card").forEach(function (el) {
+      el.classList.toggle("active", el.getAttribute("data-method") === METHOD);
+    });
   }
-  const data = await api("/api/orders");
-  const rows = (data.orders || []).map((o) => {
-    const st = { pending: "ожидает", accepted: "в работе", completed: "готов" }[o.status] || o.status;
-    return `<tr><td>#${o.id}</td><td>${escapeHtml(o.product_name)}</td><td>${formatMoney(o.price)}</td><td><span class="badge">${st}</span></td></tr>`;
-  }).join("");
-  box.innerHTML = `
-    <p>Баланс: <b>${formatMoney(ME.balance)}</b></p>
-    <p class="muted" style="margin:8px 0 14px">
-      <button type="button" class="btn btn-main" data-page="topup">Пополнить баланс</button>
-    </p>
-    <table class="table">
-      <tr><th>ID</th><th>Товар</th><th>Цена</th><th>Статус</th></tr>
-      ${rows || "<tr><td colspan=4>Заказов пока нет</td></tr>"}
-    </table>`;
-}
 
-function renderRefs() {
-  const box = document.getElementById("refsPanel");
-  if (!box) return;
-  if (!ME) {
-    box.textContent = "Войдите через Telegram.";
-    return;
-  }
-  box.innerHTML = `
-    <p>За каждого, кто откроет бота по вашей ссылке и нажмёт Start — <b>1 ₽</b>.</p>
-    <p style="margin:12px 0">Приглашено: <b>${ME.referrals}</b> · Заработано: <b>${formatMoney(ME.referral_earned)}</b></p>
-    <label>Ссылка</label>
-    <input readonly value="${ME.ref_link || ""}">
-    <p class="hint" style="margin-top:10px">Отзывы: ${CFG.review_link || ""}</p>`;
-}
-
-function renderTopup() {
-  const presets = document.getElementById("amountPresets");
-  if (presets) {
-    presets.innerHTML = TOPUP_PRESETS.map((a) =>
-      `<button type="button" class="ghost amt-btn" data-amt="${a}">${formatMoney(a)}</button>`
-    ).join("");
-  }
-  document.querySelectorAll(".pay-card").forEach((el) => {
-    el.classList.toggle("active", el.dataset.method === SELECTED_METHOD);
-  });
-  loadMyTopups();
-  if (!ME) {
-    const res = document.getElementById("topupResult");
-    if (res) {
+  function doTopup() {
+    var amount = Number($("topupAmount").value);
+    if (!amount || amount < 10) {
+      toast("Минимум 10 ₽");
+      return;
+    }
+    var res = $("topupResult");
+    if (METHOD === "stars") {
       res.classList.remove("hidden");
-      res.innerHTML = `<p class="muted">Войдите через Telegram, чтобы пополнить баланс.</p>
-        <button type="button" class="btn btn-main" data-page="login">Войти</button>`;
+      res.innerHTML =
+        "<p><b>Пополнение звёздами Telegram</b></p>" +
+        '<p class="muted" style="margin:10px 0">В боте: «Мой баланс» → пополнить. Оплата только Stars.</p>' +
+        '<a class="btn btn-main" href="https://t.me/' + BOT + '?start=topup" target="_blank" rel="noopener">Открыть @' + BOT + "</a>";
+      toast("Перейдите в бота");
+      return;
     }
-  }
-}
-
-async function loadMyTopups() {
-  const box = document.getElementById("myTopups");
-  if (!box || !ME) return;
-  const data = await api("/api/topups");
-  const rows = (data.topups || []).map((t) => {
-    const st = { pending: "ожидает", approved: "зачислено", rejected: "отклонено" }[t.status] || t.status;
-    const methods = { sbp: "СБП", google_pay: "Google Pay", apple_pay: "Apple Pay", stars: "Stars" };
-    return `<tr><td>#${t.id}</td><td>${formatMoney(t.amount_rub)}</td><td>${methods[t.method] || t.method}</td><td><span class="badge">${st}</span></td></tr>`;
-  }).join("");
-  if (!rows) {
-    box.innerHTML = "";
-    return;
-  }
-  box.innerHTML = `
-    <h3 style="margin-bottom:10px">Мои заявки</h3>
-    <table class="table">
-      <tr><th>ID</th><th>Сумма</th><th>Метод</th><th>Статус</th></tr>
-      ${rows}
-    </table>`;
-}
-
-async function doTopup() {
-  if (!ME) {
-    showPage("login");
-    toast("Сначала войдите");
-    return;
-  }
-  const amount = Number(document.getElementById("topupAmount").value);
-  if (!amount || amount < 10) {
-    toast("Минимум 10 ₽");
-    return;
-  }
-  const data = await api("/api/topup", {
-    method: "POST",
-    body: JSON.stringify({ amount, method: SELECTED_METHOD }),
-  });
-  const res = document.getElementById("topupResult");
-  if (!data.ok) {
-    toast(data.error || "Ошибка");
-    return;
-  }
-  if (data.method === "stars") {
+    var names = { sbp: "СБП", google_pay: "Google Pay", apple_pay: "Apple Pay" };
+    var msg =
+      "Пополнение баланса\n" +
+      "Сумма: " + amount + " ₽\n" +
+      "Способ: " + (names[METHOD] || METHOD);
     res.classList.remove("hidden");
-    res.innerHTML = `
-      <p><b>Пополнение звёздами Telegram</b></p>
-      <p class="muted" style="margin:10px 0">Откройте бота и выберите «Мой баланс» → пополнить. Оплата только через Telegram Stars.</p>
-      <a class="btn btn-main" href="${data.bot_link}" target="_blank" rel="noopener">Открыть @${CFG.bot_username || "nexvenstudiobot"}</a>`;
-    toast("Перейдите в бота для оплаты звёздами");
-    return;
+    res.innerHTML =
+      "<p><b>Оплата: " + (names[METHOD] || METHOD) + "</b></p>" +
+      "<p style=\"margin:8px 0\">Сумма: <b>" + formatMoney(amount) + "</b></p>" +
+      '<p class="muted">Напишите менеджеру и укажите сумму. После оплаты баланс начислит админ в боте.</p>' +
+      '<a class="btn btn-main" href="https://t.me/' + MANAGER + "?text=" + encodeURIComponent(msg) + '" target="_blank" rel="noopener">Написать @' + MANAGER + "</a>" +
+      " &nbsp; " +
+      '<a class="ghost btn" href="https://t.me/' + BOT + '" target="_blank" rel="noopener">Открыть бота</a>';
+    toast("Напишите менеджеру для оплаты");
   }
-  const methodNames = { sbp: "СБП", google_pay: "Google Pay", apple_pay: "Apple Pay" };
-  res.classList.remove("hidden");
-  res.innerHTML = `
-    <p><b>Заявка #${data.request_id} создана</b></p>
-    <p style="margin:8px 0">Сумма: <b>${formatMoney(data.amount)}</b> · Способ: <b>${methodNames[data.method] || data.method}</b></p>
-    <p class="muted">${escapeHtml(data.message || "")}</p>
-    <p style="margin-top:12px">После оплаты напишите менеджеру:
-      <a href="https://t.me/${data.manager || CFG.manager || "nexvenstudiomanager"}" target="_blank">@${data.manager || CFG.manager || "nexvenstudiomanager"}</a>
-      с номером заявки <b>#${data.request_id}</b></p>`;
-  toast("Заявка на пополнение создана");
-  loadMyTopups();
-}
 
-async function setCurrency(cur) {
-  CURRENCY = cur;
-  localStorage.setItem("nexven_currency", cur);
-  paintUser();
-  renderGrids();
-  if (ME) {
-    await api("/api/currency", { method: "POST", body: JSON.stringify({ currency: cur }) });
-    ME.currency = cur;
+  function setCurrency(cur) {
+    CURRENCY = cur;
+    localStorage.setItem("nexven_currency", cur);
+    paintBalance();
+    renderGrids();
+    if ($("page-topup") && !$("page-topup").classList.contains("hidden")) renderTopup();
   }
-  if (document.getElementById("page-topup") && !document.getElementById("page-topup").classList.contains("hidden")) {
-    renderTopup();
-  }
-}
 
-async function renderAdmin() {
-  const box = document.getElementById("adminPanel");
-  if (!box) return;
-  if (!ME || !ME.is_admin) {
-    box.textContent = "Нет доступа";
-    return;
-  }
-  const pending = await api("/api/admin/orders");
-  const topups = await api("/api/admin/topups");
-  const pRows = (pending.orders || []).map((o) => `
-    <tr>
-      <td>#${o.id}</td><td>${escapeHtml(o.product_name)}</td>
-      <td>${escapeHtml(o.description || "")}</td>
-      <td><button type="button" class="btn" data-accept="${o.id}">Принять</button></td>
-    </tr>`).join("");
-  const tRows = (topups.topups || []).map((t) => `
-    <tr>
-      <td>#${t.id}</td><td>${t.user_id}</td><td>${formatMoney(t.amount_rub)}</td><td>${t.method}</td>
-      <td>
-        <button type="button" class="btn btn-main" data-approve-topup="${t.id}">Одобрить</button>
-        <button type="button" class="ghost" data-reject-topup="${t.id}">Отклонить</button>
-      </td>
-    </tr>`).join("");
-  const prodRows = PRODUCTS.map((p) => `
-    <div class="panel" style="margin:10px 0;padding:14px">
-      <b>${escapeHtml(p.name)}</b> — ${formatMoney(p.price)}
-      <div class="row">
-        <input type="text" id="n-${p.id}" value="${escapeHtml(p.name)}" style="flex:1">
-        <input type="number" id="pr-${p.id}" value="${p.price}" style="width:110px">
-      </div>
-      <textarea id="d-${p.id}">${escapeHtml(p.description || "")}</textarea>
-      <div class="row">
-        <button type="button" class="btn" data-save="${p.id}">Сохранить</button>
-        <label class="btn">Фото
-          <input type="file" accept="image/*" hidden data-upload="${p.id}">
-        </label>
-      </div>
-    </div>`).join("");
-  box.innerHTML = `
-    <h3>Новые заказы</h3>
-    <table class="table">${pRows || "<tr><td>Пусто</td></tr>"}</table>
-    <h3 style="margin-top:22px">Заявки на пополнение</h3>
-    <table class="table">${tRows || "<tr><td>Пусто</td></tr>"}</table>
-    <h3 style="margin-top:22px">Товары и фото</h3>
-    ${prodRows}
-    <h3 style="margin-top:22px">Выдать баланс</h3>
-    <div class="row">
-      <input id="giveId" placeholder="Telegram ID">
-      <input id="giveAmt" placeholder="Сумма ₽" type="number">
-      <button type="button" class="btn btn-main" id="btnGiveBal">Начислить</button>
-    </div>`;
-}
-
-async function saveProduct(id) {
-  const data = await api("/api/products", {
-    method: "POST",
-    body: JSON.stringify({
-      id,
-      name: document.getElementById("n-" + id).value,
-      price: document.getElementById("pr-" + id).value,
-      description: document.getElementById("d-" + id).value,
-    }),
-  });
-  toast(data.ok ? "Сохранено" : (data.error || "Ошибка"));
-  await loadProducts();
-}
-
-async function uploadImg(id, input) {
-  const file = input.files[0];
-  if (!file) return;
-  const fd = new FormData();
-  fd.append("file", file);
-  const res = await fetch("/api/products/" + id + "/image", { method: "POST", body: fd, credentials: "same-origin" });
-  const data = await res.json();
-  toast(data.ok ? "Фото прикреплено" : (data.error || "Ошибка"));
-  await loadProducts();
-  renderAdmin();
-}
-
-async function acceptOrder(id) {
-  const data = await api("/api/admin/orders/" + id + "/accept", { method: "POST" });
-  toast(data.message || (data.ok ? "Принят" : "Ошибка"));
-  renderAdmin();
-}
-
-async function approveTopup(id) {
-  const data = await api("/api/admin/topups/" + id + "/approve", { method: "POST" });
-  toast(data.message || (data.ok ? "Одобрено" : "Ошибка"));
-  renderAdmin();
-}
-
-async function rejectTopup(id) {
-  const data = await api("/api/admin/topups/" + id + "/reject", { method: "POST" });
-  toast(data.message || (data.ok ? "Отклонено" : "Ошибка"));
-  renderAdmin();
-}
-
-async function giveBal() {
-  const data = await api("/api/admin/give", {
-    method: "POST",
-    body: JSON.stringify({
-      user_id: document.getElementById("giveId").value,
-      amount: document.getElementById("giveAmt").value,
-    }),
-  });
-  toast(data.ok ? "Начислено" : (data.error || "Ошибка"));
-}
-
-async function loadProducts() {
-  const data = await api("/api/products");
-  PRODUCTS = data.products || [];
-  renderGrids();
-  syncFirebaseProducts(PRODUCTS);
-}
-
-function initFirebase(cfg) {
-  try {
-    if (!cfg || !window.firebase) return;
-    if (!firebase.apps.length) firebase.initializeApp(cfg);
-    if (firebase.analytics) firebase.analytics();
-  } catch (e) {
-    console.warn("Firebase:", e);
-  }
-}
-
-function syncFirebaseProducts(list) {
-  try {
-    if (!window.firebase || !firebase.apps.length) return;
-    const db = firebase.firestore();
-    list.forEach((p) => {
-      db.collection("products").doc(p.id).set({
-        name: p.name, price: p.price, description: p.description || "",
-        category: p.category, image_url: p.image_url || null, updated: Date.now(),
-      }, { merge: true });
+  function bind() {
+    document.body.addEventListener("click", function (e) {
+      var t = e.target.closest("[data-page]");
+      if (t) {
+        e.preventDefault();
+        showPage(t.getAttribute("data-page"));
+        return;
+      }
+      var order = e.target.closest("[data-order]");
+      if (order) {
+        openOrder(order.getAttribute("data-order"));
+        return;
+      }
+      var amt = e.target.closest("[data-amt]");
+      if (amt) {
+        $("topupAmount").value = amt.getAttribute("data-amt");
+        return;
+      }
+      var pay = e.target.closest(".pay-card");
+      if (pay) {
+        METHOD = pay.getAttribute("data-method");
+        document.querySelectorAll(".pay-card").forEach(function (el) {
+          el.classList.remove("active");
+        });
+        pay.classList.add("active");
+        return;
+      }
     });
-  } catch (e) {}
-}
 
-function syncFirebaseUser(u) {
-  try {
-    if (!window.firebase || !firebase.apps.length || !u) return;
-    firebase.firestore().collection("users").doc(String(u.user_id)).set({
-      username: u.username || null,
-      full_name: u.full_name || null,
-      balance: u.balance,
-      currency: u.currency || CURRENCY,
-      updated: Date.now(),
-    }, { merge: true });
-  } catch (e) {}
-}
+    var curSel = $("currencySelect");
+    if (curSel) {
+      curSel.value = CURRENCY;
+      curSel.addEventListener("change", function () {
+        setCurrency(curSel.value);
+      });
+    }
 
-function bindEvents() {
-  document.body.addEventListener("click", (e) => {
-    const t = e.target.closest("[data-page]");
-    if (t) {
-      e.preventDefault();
-      showPage(t.getAttribute("data-page"));
-      return;
-    }
-    const order = e.target.closest("[data-order]");
-    if (order) {
-      openOrder(order.getAttribute("data-order"));
-      return;
-    }
-    const accept = e.target.closest("[data-accept]");
-    if (accept) {
-      acceptOrder(Number(accept.getAttribute("data-accept")));
-      return;
-    }
-    const save = e.target.closest("[data-save]");
-    if (save) {
-      saveProduct(save.getAttribute("data-save"));
-      return;
-    }
-    const appr = e.target.closest("[data-approve-topup]");
-    if (appr) {
-      approveTopup(Number(appr.getAttribute("data-approve-topup")));
-      return;
-    }
-    const rej = e.target.closest("[data-reject-topup]");
-    if (rej) {
-      rejectTopup(Number(rej.getAttribute("data-reject-topup")));
-      return;
-    }
-    const amt = e.target.closest("[data-amt]");
-    if (amt) {
-      document.getElementById("topupAmount").value = amt.getAttribute("data-amt");
-      return;
-    }
-    const pay = e.target.closest(".pay-card");
-    if (pay) {
-      SELECTED_METHOD = pay.getAttribute("data-method");
-      document.querySelectorAll(".pay-card").forEach((el) => el.classList.remove("active"));
-      pay.classList.add("active");
-      return;
-    }
-  });
+    var btnTopup = $("btnDoTopup");
+    if (btnTopup) btnTopup.addEventListener("click", doTopup);
 
-  document.body.addEventListener("change", (e) => {
-    if (e.target.matches("[data-upload]")) {
-      uploadImg(e.target.getAttribute("data-upload"), e.target);
-    }
-  });
+    var btnSubmit = $("btnSubmitOrder");
+    if (btnSubmit) btnSubmit.addEventListener("click", submitOrder);
 
-  const curSel = document.getElementById("currencySelect");
-  if (curSel) {
-    curSel.value = CURRENCY;
-    curSel.addEventListener("change", () => setCurrency(curSel.value));
+    var btnClose = $("btnCloseModal");
+    if (btnClose) btnClose.addEventListener("click", closeModal);
+
+    var loginBtn = $("btnLoginBot");
+    if (loginBtn) {
+      loginBtn.addEventListener("click", function () {
+        window.open("https://t.me/" + BOT, "_blank");
+      });
+    }
   }
 
-  const btnTopup = document.getElementById("btnDoTopup");
-  if (btnTopup) btnTopup.addEventListener("click", doTopup);
-
-  const btnSubmit = document.getElementById("btnSubmitOrder");
-  if (btnSubmit) btnSubmit.addEventListener("click", submitOrder);
-
-  const btnClose = document.getElementById("btnCloseModal");
-  if (btnClose) btnClose.addEventListener("click", closeModal);
-
-  document.body.addEventListener("click", (e) => {
-    if (e.target.id === "btnGiveBal") giveBal();
-  });
-}
-
-async function boot() {
-  bindEvents();
-  try {
-    const cfg = await api("/api/config");
-    CFG = cfg.ok ? cfg : {};
-  } catch (e) {
-    CFG = {};
+  function boot() {
+    bind();
+    paintBalance();
+    renderGrids();
+    showPage("home");
   }
-  initFirebase(CFG.firebase);
-  const me = await api("/api/me");
-  ME = me.user || null;
-  if (ME && ME.currency) {
-    CURRENCY = ME.currency;
-    localStorage.setItem("nexven_currency", CURRENCY);
-  }
-  paintUser();
-  await loadProducts();
-  showPage("home");
-}
 
-boot();
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", boot);
+  } else {
+    boot();
+  }
+})();
