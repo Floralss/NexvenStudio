@@ -1,147 +1,162 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-<meta charset="UTF-8">
-<base href="/NexvenStudio/">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>NexVen Studio</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;800&family=Oswald:wght@600;700&display=swap" rel="stylesheet">
-<style>
-*{box-sizing:border-box;margin:0;padding:0}
-html,body{min-height:100%;background:#050506;color:#f3f4f6;font-family:Manrope,Arial,sans-serif}
-body{background:radial-gradient(1100px 520px at 50% -8%,rgba(255,255,255,.09),transparent 55%),#050506}
-.steel{background:linear-gradient(180deg,#fff 0%,#d7d7dc 18%,#9a9aa3 48%,#efeff3 72%,#7d7d86 100%);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 8px 16px rgba(0,0,0,.5))}
-.wrap{width:min(1180px,calc(100% - 28px));margin:0 auto}
-.nav{position:sticky;top:0;z-index:50;background:rgba(5,5,7,.86);border-bottom:1px solid rgba(255,255,255,.12);backdrop-filter:blur(16px)}
-.nav-in{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:12px 0}
-.brand{display:flex;align-items:center;gap:10px;cursor:pointer}
-.brand img{width:42px;height:42px;border-radius:12px;object-fit:cover}
-.brand b{font-family:Oswald,sans-serif;letter-spacing:.12em;font-size:18px}
-.nav-links,.userbox,.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-button,.btn,.ghost{border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.04);color:#fff;padding:10px 14px;border-radius:999px;cursor:pointer;font:inherit}
-.btn-main{background:linear-gradient(180deg,#f7f7f8,#b7b7c0);color:#111;font-weight:800;border:0}
-.hero{padding:54px 0 24px;text-align:center}
-.hero img.logo{width:min(420px,86vw)}
-.hero h1{font-family:Oswald,sans-serif;font-size:clamp(40px,8vw,86px);line-height:.9;letter-spacing:.04em;margin:16px 0 12px}
-.hero p,.muted{color:#9aa0a8;line-height:1.5}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:16px;padding:8px 0 70px}
-.card{background:rgba(16,16,20,.88);border:1px solid rgba(255,255,255,.14);border-radius:22px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 0 40px rgba(200,200,220,.08)}
-.pic{height:168px;display:grid;place-items:center;background:radial-gradient(circle at 30% 20%,rgba(255,255,255,.14),transparent 42%),linear-gradient(160deg,#1a1a20,#09090b)}
-.pic img{width:100%;height:100%;object-fit:cover}
-.pic .ph{font-family:Oswald,sans-serif;letter-spacing:.12em;font-size:20px}
-.body{padding:16px;display:flex;flex-direction:column;gap:8px;flex:1}
-.price{font-weight:800}
-.section-title{font-family:Oswald,sans-serif;letter-spacing:.16em;text-transform:uppercase;font-size:13px;color:#d0d0d6;margin:12px 0}
-.panel,.modal-card{background:rgba(16,16,20,.92);border:1px solid rgba(255,255,255,.14);border-radius:22px;padding:20px}
-.modal{position:fixed;inset:0;background:rgba(0,0,0,.72);display:none;place-items:center;z-index:80;padding:16px}
-.modal.show{display:grid}
-.modal-card{width:min(560px,100%)}
-label{display:block;margin:12px 0 6px;color:#9aa0a8;font-size:13px}
-input,textarea{width:100%;background:#0c0c10;border:1px solid rgba(255,255,255,.14);color:#fff;border-radius:12px;padding:11px;font:inherit}
-textarea{min-height:110px}
-.hidden{display:none !important}
-.table{width:100%;border-collapse:collapse;font-size:14px}
-.table td,.table th{border-bottom:1px solid rgba(255,255,255,.1);padding:9px 6px;text-align:left}
-.toast{position:fixed;right:14px;bottom:14px;background:#151518;border:1px solid rgba(255,255,255,.2);padding:12px 14px;border-radius:14px;display:none;z-index:99}
-.warn{background:#3a2a12;border:1px solid #c9a36a;color:#ffe4b3;padding:12px 14px;border-radius:14px;margin:14px 0}
-.userbox img{width:32px;height:32px;border-radius:50%}
-.login-box{text-align:center;padding:30px 0 60px}
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NexVen Studio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&family=Oswald:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css" />
 </head>
 <body>
-<nav class="nav"><div class="wrap nav-in">
-  <div class="brand" onclick="go('home')">
-    <img src="assets/logo.png" alt="logo" onerror="this.style.display='none'">
-    <b class="steel">NEXVEN STUDIO</b>
-  </div>
-  <div class="nav-links">
-    <button onclick="go('catalog')">Каталог</button>
-    <button onclick="go('projects')">Проекты</button>
-    <button onclick="go('mods')">Моды</button>
-    <button onclick="go('orders')">Заказы</button>
-    <button onclick="go('refs')">Рефералы</button>
-    <button id="adminBtn" class="hidden" onclick="go('admin')">Админ</button>
-  </div>
-  <div class="userbox" id="userbox"><button class="btn-main" onclick="go('login')">Войти через Telegram</button></div>
-</div></nav>
-<main class="wrap">
-  <div id="warn" class="warn hidden">На хостинг загружайте всю папку site: index.html и папку assets. В BotFather: /setdomain и ваш домен.</div>
-  <section id="page-home" class="hero">
-    <img class="logo" src="assets/logo.png" alt="NexVen Studio" onerror="this.style.display='none'">
-    <h1 class="steel">NEXVEN<br>STUDIO</h1>
-    <p>Боты, сайты, проекты CRMP/SAMP и моды. Чёрный металл, заказ в один клик.</p>
-    <div class="row" style="justify-content:center;margin-top:16px">
-      <button class="btn-main" onclick="go('catalog')">Смотреть товары</button>
-      <button onclick="go('mods')">Купить мод</button>
+  <nav class="nav">
+    <div class="wrap nav-in">
+      <div class="brand" data-page="home">
+        <img src="/assets/logo.png" alt="NexVen">
+        <b class="steel">NEXVEN STUDIO</b>
+      </div>
+      <div class="nav-links">
+        <button type="button" data-page="catalog">Каталог</button>
+        <button type="button" data-page="projects">Проекты</button>
+        <button type="button" data-page="mods">Моды</button>
+        <button type="button" data-page="orders">Заказы</button>
+        <button type="button" data-page="topup">Пополнить</button>
+        <button type="button" data-page="refs">Рефералы</button>
+        <button type="button" id="adminBtn" class="hidden" data-page="admin">Админ</button>
+      </div>
+      <div class="userbox" id="userbox">
+        <button type="button" class="btn btn-main" data-page="login">Войти через Telegram</button>
+      </div>
     </div>
-  </section>
-  <section id="page-catalog" class="hidden" style="display:none"><div class="section-title">Каталог</div><div class="grid" id="g-catalog"></div></section>
-  <section id="page-projects" class="hidden" style="display:none"><div class="section-title">Проект CRMP / SAMP</div><p class="muted">Настройка по вашему ТЗ.</p><div class="grid" id="g-projects"></div></section>
-  <section id="page-mods" class="hidden" style="display:none"><div class="section-title">Купить мод</div><p class="muted">CRMP Black Russia 150 ₽ · SAMP Arizona RP 250 ₽.</p><div class="grid" id="g-mods"></div></section>
-  <section id="page-orders" class="hidden" style="display:none"><div class="section-title">Заказы и баланс</div><div class="panel" id="ordersBox">Войдите через Telegram.</div></section>
-  <section id="page-refs" class="hidden" style="display:none"><div class="section-title">Рефералы</div><div class="panel" id="refsBox">Войдите через Telegram.</div></section>
-  <section id="page-admin" class="hidden" style="display:none"><div class="section-title">Админ</div><div class="panel" id="adminBox"></div></section>
-  <section id="page-login" class="hidden" style="display:none">
-    <div class="login-box">
-      <h2 class="steel" style="font-family:Oswald,sans-serif;letter-spacing:.12em;font-size:36px">ВХОД ЧЕРЕЗ TELEGRAM</h2>
-      <p class="muted" style="margin:12px 0 18px">В @BotFather: /setdomain и домен хостинга</p>
-      <div id="tg-widget"></div>
-    </div>
-  </section>
-</main>
-<div class="modal" id="modal">
-  <div class="modal-card">
-    <h3 id="mTitle" class="steel" style="font-family:Oswald,sans-serif"></h3>
-    <p class="muted" id="mDesc" style="margin:8px 0"></p>
-    <p class="price" id="mPrice"></p>
-    <label>Описание заказа</label>
-    <textarea id="mText" placeholder="Что сделать, стиль, функции"></textarea>
-    <div class="row" style="margin-top:12px">
-      <button class="btn-main" onclick="buy()">Подтвердить и списать</button>
-      <button onclick="document.getElementById('modal').classList.remove('show')">Закрыть</button>
+  </nav>
+
+  <div class="balance-bar wrap" id="balanceBar">
+    <div class="balance-card">
+      <div>
+        <span class="muted">Баланс</span>
+        <div class="balance-value" id="balanceValue">— ₽</div>
+      </div>
+      <div class="currency-wrap">
+        <label class="muted" for="currencySelect">Валюта</label>
+        <select id="currencySelect">
+          <option value="RUB">₽ RUB</option>
+          <option value="UAH">₴ UAH</option>
+          <option value="KZT">₸ KZT</option>
+          <option value="BYN">Br BYN</option>
+        </select>
+      </div>
+      <button type="button" class="btn btn-main" data-page="topup">Пополнить</button>
     </div>
   </div>
-</div>
-<div class="toast" id="toast"></div>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-storage-compat.js"></script>
-<script>
-const ADMINS=[5198310704];
-const BOT="nexvenstudiobot";
-const FB={apiKey:"AIzaSyAPTTDTPzDpKQjpPvze1IBsJQJw74_ua34",authDomain:"custom-graphics-36c50.firebaseapp.com",projectId:"custom-graphics-36c50",storageBucket:"custom-graphics-36c50.firebasestorage.app",messagingSenderId:"130011001835",appId:"1:130011001835:web:1ba6e4e4b3c7a6f0b7dfae",measurementId:"G-94YQXEFZDD"};
-const SEED=[
-  {id:"bot",name:"Заказать бота",price:105,description:"Бот по вашему описанию.",category:"catalog"},
-  {id:"site",name:"Заказать сайт",price:210,description:"Сайт по вашему ТЗ.",category:"catalog"},
-  {id:"prompt",name:"Обучение по промпту для ИИ",price:25,description:"Материалы после оплаты.",category:"catalog"},
-  {id:"project_crmp",name:"Создать проект CRMP",price:300,description:"Проект CRMP по вашему ТЗ.",category:"project"},
-  {id:"project_samp",name:"Создать проект SAMP",price:300,description:"Проект SAMP по вашему ТЗ.",category:"project"},
-  {id:"mod_blackrussia",name:"Мод Black Russia (CRMP)",price:150,description:"Настройка по описанию.",category:"mod"},
-  {id:"mod_arizona",name:"Мод Arizona RP (SAMP)",price:250,description:"Настройка по описанию.",category:"mod"}
-];
-let db=null,storage=null,PRODUCTS=SEED.slice(),ME=null,CUR=null;
-function toast(t){const e=document.getElementById("toast");e.textContent=t;e.style.display="block";setTimeout(()=>e.style.display="none",2800)}
-function esc(s){return String(s||"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\\"":"&quot;","'":"&#39;"}[c]))}
-function go(n){document.querySelectorAll("main > section").forEach(s=>{s.classList.add("hidden");s.style.display="none"});const p=document.getElementById("page-"+n);if(p){p.classList.remove("hidden");p.style.display=n==="home"?"block":"block"};if(n==="login")drawLogin();if(n==="orders")drawOrders();if(n==="refs")drawRefs();if(n==="admin")drawAdmin()}
-function card(p){const img=p.image_url?`<img src="${esc(p.image_url)}" alt="">`:`<div class="ph steel">${esc(p.name).slice(0,18)}</div>`;return `<article class="card"><div class="pic">${img}</div><div class="body"><h3>${esc(p.name)}</h3><div class="price">${Number(p.price).toFixed(0)} ₽</div><div class="muted">${esc(p.description)}</div><button class="btn-main" onclick="openBuy('${p.id}')">Заказать</button></div></article>`}
-function drawGrids(){document.getElementById("g-catalog").innerHTML=PRODUCTS.filter(p=>p.category==="catalog").map(card).join("");document.getElementById("g-projects").innerHTML=PRODUCTS.filter(p=>p.category==="project").map(card).join("");document.getElementById("g-mods").innerHTML=PRODUCTS.filter(p=>p.category==="mod").map(card).join("")}
-function paintUser(){const box=document.getElementById("userbox");const adm=document.getElementById("adminBtn");if(!ME){box.innerHTML=`<button class="btn-main" onclick="go('login')">Войти через Telegram</button>`;adm.classList.add("hidden");return}box.innerHTML=`${ME.photo_url?`<img src="${esc(ME.photo_url)}">`:""}<span>@${esc(ME.username||ME.user_id)}<br><b>${Math.round(ME.balance||0)} ₽</b></span><button onclick="logout()">Выйти</button>`;if(ADMINS.includes(Number(ME.user_id)))adm.classList.remove("hidden")}
-function logout(){ME=null;localStorage.removeItem("nv_user");paintUser();go("home")}
-function openBuy(id){if(!ME){go("login");toast("Сначала войдите");return}CUR=PRODUCTS.find(p=>p.id===id);if(!CUR)return;document.getElementById("mTitle").textContent=CUR.name;document.getElementById("mDesc").textContent=CUR.description||"";document.getElementById("mPrice").textContent=Number(CUR.price).toFixed(0)+" ₽";document.getElementById("mText").value="";document.getElementById("modal").classList.add("show")}
-async function buy(){if(!CUR||!ME)return;const desc=document.getElementById("mText").value.trim();if(desc.length<5){toast("Напишите описание");return}if((ME.balance||0)<CUR.price){toast("Недостаточно средств. Пополните в боте.");return}ME.balance=Number(ME.balance||0)-Number(CUR.price);const order={user_id:ME.user_id,product_id:CUR.id,product_name:CUR.name,price:CUR.price,description:desc,status:"pending",created_at:Date.now()};try{if(db){await db.collection("orders").add(order);await db.collection("users").doc(String(ME.user_id)).set({balance:ME.balance},{merge:true})}}catch(e){}saveMe();paintUser();document.getElementById("modal").classList.remove("show");toast("Заказ создан");go("orders")}
-function saveMe(){localStorage.setItem("nv_user",JSON.stringify(ME))}
-async function drawOrders(){const box=document.getElementById("ordersBox");if(!ME){box.textContent="Войдите через Telegram.";return}let rows="";try{if(db){const snap=await db.collection("orders").where("user_id","==",ME.user_id).get();const list=[];snap.forEach(d=>list.push({id:d.id,...d.data()}));list.sort((a,b)=>(b.created_at||0)-(a.created_at||0));rows=list.map(o=>`<tr><td>${esc(o.product_name)}</td><td>${Number(o.price).toFixed(0)} ₽</td><td>${esc(o.status)}</td></tr>`).join("")}}catch(e){}box.innerHTML=`<p>Баланс: <b>${Math.round(ME.balance||0)} ₽</b></p><p class="muted" style="margin:8px 0 12px">Пополнение в боте @${BOT}</p><table class="table"><tr><th>Товар</th><th>Цена</th><th>Статус</th></tr>${rows||"<tr><td colspan=3>Пока пусто</td></tr>"}</table>`}
-function drawRefs(){const box=document.getElementById("refsBox");if(!ME){box.textContent="Войдите через Telegram.";return}box.innerHTML=`<p>За каждого, кто нажмёт Start — <b>1 ₽</b>.</p><label>Ссылка</label><input readonly value="https://t.me/${BOT}?start=ref_${ME.user_id}">`}
-async function drawAdmin(){const box=document.getElementById("adminBox");if(!ME||!ADMINS.includes(Number(ME.user_id))){box.textContent="Нет доступа";return}let orders="";try{if(db){const snap=await db.collection("orders").where("status","==","pending").get();snap.forEach(d=>{const o=d.data();orders+=`<tr><td>${esc(o.product_name)}</td><td>${esc(o.description)}</td><td><button onclick="accept('${d.id}')">Принять</button></td></tr>`})}}catch(e){}const prods=PRODUCTS.map(p=>`<div class="panel" style="margin:10px 0"><b>${esc(p.name)}</b> — ${Number(p.price).toFixed(0)} ₽<br><input id="n-${p.id}" value="${esc(p.name)}"><input id="pr-${p.id}" type="number" value="${p.price}"><textarea id="d-${p.id}">${esc(p.description)}</textarea><div class="row" style="margin-top:8px"><button onclick="saveP('${p.id}')">Сохранить</button><label class="btn">Фото<input type="file" accept="image/*" hidden onchange="upImg('${p.id}',this)"></label></div></div>`).join("");box.innerHTML=`<h3>Новые заказы</h3><table class="table">${orders||"<tr><td>Пусто</td></tr>"}</table><h3 style="margin-top:18px">Товары</h3>${prods}<div class="row" style="margin-top:16px"><input id="giveId" placeholder="Telegram ID"><input id="giveAmt" placeholder="Сумма"><button class="btn-main" onclick="give()">Начислить</button></div>`}
-async function accept(id){if(db)await db.collection("orders").doc(id).set({status:"accepted"},{merge:true});toast("Принят");drawAdmin()}
-async function saveP(id){const name=document.getElementById("n-"+id).value,price=Number(document.getElementById("pr-"+id).value),description=document.getElementById("d-"+id).value;const p=PRODUCTS.find(x=>x.id===id);if(p){p.name=name;p.price=price;p.description=description}if(db)await db.collection("products").doc(id).set({name,price,description},{merge:true});drawGrids();toast("Сохранено")}
-async function upImg(id,input){const file=input.files[0];if(!file)return;try{if(!storage){toast("Storage недоступен");return}const ref=storage.ref("products/"+id+"_"+Date.now());await ref.put(file);const url=await ref.getDownloadURL();const p=PRODUCTS.find(x=>x.id===id);if(p)p.image_url=url;if(db)await db.collection("products").doc(id).set({image_url:url},{merge:true});drawGrids();drawAdmin();toast("Фото стоит")}catch(e){toast("Включите Storage в Firebase")}}
-async function give(){const uid=document.getElementById("giveId").value.trim();const amt=Number(document.getElementById("giveAmt").value);if(!uid||!(amt>0)){toast("ID и сумма");return}if(db){const ref=db.collection("users").doc(String(uid));const snap=await ref.get();const bal=Number((snap.exists&&snap.data().balance)||0)+amt;await ref.set({balance:bal},{merge:true})}toast("Начислено")}
-function drawLogin(){const box=document.getElementById("tg-widget");box.innerHTML="";const s=document.createElement("script");s.async=true;s.src="https://telegram.org/js/telegram-widget.js?22";s.setAttribute("data-telegram-login",BOT);s.setAttribute("data-size","large");s.setAttribute("data-radius","12");s.setAttribute("data-onauth","onTelegramAuth(user)");s.setAttribute("data-request-access","write");box.appendChild(s)}
-window.onTelegramAuth=async function(user){ME={user_id:Number(user.id),username:user.username||"",full_name:[user.first_name,user.last_name].filter(Boolean).join(" "),photo_url:user.photo_url||"",balance:0};try{if(db){const ref=db.collection("users").doc(String(ME.user_id));const snap=await ref.get();if(snap.exists)ME={...ME,...snap.data(),user_id:ME.user_id};await ref.set({username:ME.username,full_name:ME.full_name,photo_url:ME.photo_url,balance:Number(ME.balance||0),updated:Date.now()},{merge:true})}}catch(e){}saveMe();paintUser();go("catalog");toast("Вход выполнен")};
-async function boot(){if(location.protocol==="file:"){document.getElementById("warn").classList.remove("hidden")}try{if(window.firebase){if(!firebase.apps.length)firebase.initializeApp(FB);db=firebase.firestore();storage=firebase.storage();const snap=await db.collection("products").get();if(snap.empty){for(const p of SEED)await db.collection("products").doc(p.id).set(p,{merge:true});PRODUCTS=SEED.slice()}else{const arr=[];snap.forEach(d=>arr.push({id:d.id,...d.data()}));PRODUCTS=arr}}}catch(e){PRODUCTS=SEED.slice()}const saved=localStorage.getItem("nv_user");if(saved){try{ME=JSON.parse(saved)}catch(e){}}paintUser();drawGrids()}
-boot();
-</script>
+
+  <main class="wrap">
+    <section id="page-home" class="hero">
+      <img class="logo" src="/assets/logo.png" alt="NexVen Studio">
+      <h1 class="steel">NEXVEN<br>STUDIO</h1>
+      <p>Боты, сайты, проекты CRMP/SAMP и моды под ваш стиль. Чёрный металл, точная работа, заказ в один клик.</p>
+      <div class="row" style="justify-content:center">
+        <button type="button" class="btn btn-main" data-page="catalog">Смотреть товары</button>
+        <button type="button" class="ghost" data-page="mods">Купить мод</button>
+        <button type="button" class="ghost" data-page="topup">Пополнить баланс</button>
+      </div>
+    </section>
+
+    <section id="page-catalog" class="hidden">
+      <div class="section-title">Каталог</div>
+      <div class="grid" id="grid-catalog"></div>
+    </section>
+    <section id="page-projects" class="hidden">
+      <div class="section-title">Создать проект CRMP / SAMP</div>
+      <p class="muted" style="margin-bottom:16px">Проект настраивается по вашему ТЗ: системы, моды, оформление.</p>
+      <div class="grid" id="grid-projects"></div>
+    </section>
+    <section id="page-mods" class="hidden">
+      <div class="section-title">Купить мод</div>
+      <p class="muted" style="margin-bottom:16px">CRMP — Black Russia · SAMP — Arizona RP. Настройка по описанию.</p>
+      <div class="grid" id="grid-mods"></div>
+    </section>
+
+    <section id="page-orders" class="hidden">
+      <div class="section-title">Мои заказы и баланс</div>
+      <div class="panel" id="ordersPanel">Войдите через Telegram.</div>
+    </section>
+
+    <section id="page-topup" class="hidden">
+      <div class="section-title">Пополнение баланса</div>
+      <div class="panel" id="topupPanel">
+        <p class="muted" style="margin-bottom:14px">Выберите сумму и способ оплаты. Баланс общий с Telegram-ботом.</p>
+        <label>Сумма (в рублях)</label>
+        <div class="row amount-row" id="amountPresets"></div>
+        <input type="number" id="topupAmount" min="10" step="1" placeholder="Или введите свою сумму" value="100">
+        <label style="margin-top:16px">Способ оплаты</label>
+        <div class="pay-methods" id="payMethods">
+          <button type="button" class="pay-card" data-method="stars">
+            <span class="pay-icon">⭐</span>
+            <b>Telegram Stars</b>
+            <span class="muted">Мгновенно через бота</span>
+          </button>
+          <button type="button" class="pay-card" data-method="sbp">
+            <span class="pay-icon">🏦</span>
+            <b>СБП</b>
+            <span class="muted">Система быстрых платежей</span>
+          </button>
+          <button type="button" class="pay-card" data-method="google_pay">
+            <span class="pay-icon">G</span>
+            <b>Google Pay</b>
+            <span class="muted">Через заявку</span>
+          </button>
+          <button type="button" class="pay-card" data-method="apple_pay">
+            <span class="pay-icon"></span>
+            <b>Apple Pay</b>
+            <span class="muted">Через заявку</span>
+          </button>
+        </div>
+        <div class="row" style="margin-top:18px">
+          <button type="button" class="btn btn-main" id="btnDoTopup">Оформить пополнение</button>
+        </div>
+        <div id="topupResult" class="topup-result hidden"></div>
+        <div id="myTopups" style="margin-top:22px"></div>
+      </div>
+    </section>
+
+    <section id="page-refs" class="hidden">
+      <div class="section-title">Рефералы</div>
+      <div class="panel" id="refsPanel">Войдите через Telegram.</div>
+    </section>
+    <section id="page-admin" class="hidden">
+      <div class="section-title">Админ-панель</div>
+      <div class="panel" id="adminPanel"></div>
+    </section>
+    <section id="page-login" class="hidden">
+      <div class="login-box">
+        <h2 class="steel" style="font-family:Oswald,sans-serif;letter-spacing:.12em">ВХОД ЧЕРЕЗ TELEGRAM</h2>
+        <p class="muted">Официальный виджет Telegram. Домен сайта нужно указать боту в @BotFather командой /setdomain</p>
+        <div id="tg-widget"></div>
+        <p class="hint">Бот: @nexvenstudiobot</p>
+      </div>
+    </section>
+  </main>
+
+  <div class="modal" id="orderModal">
+    <div class="modal-card">
+      <h3 id="mTitle" class="steel" style="font-family:Oswald,sans-serif"></h3>
+      <p class="muted" id="mDesc" style="margin:10px 0"></p>
+      <p class="price" id="mPrice"></p>
+      <label>Описание заказа</label>
+      <textarea id="mText" placeholder="Что нужно сделать, стиль, функции..."></textarea>
+      <div class="row">
+        <button type="button" class="btn btn-main" id="btnSubmitOrder">Подтвердить и списать</button>
+        <button type="button" class="ghost" id="btnCloseModal">Закрыть</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-analytics-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+  <script src="/js/app.js"></script>
 </body>
 </html>

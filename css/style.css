@@ -176,3 +176,77 @@ textarea { min-height: 110px; resize: vertical; }
 @media (max-width: 720px) {
   .nav-links { display: none; }
 }
+
+/* Balance bar */
+.balance-bar { padding: 12px 0 0; }
+.balance-card {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: 14px 18px;
+  box-shadow: var(--glow);
+  margin-bottom: 8px;
+}
+.balance-value {
+  font-family: "Oswald", sans-serif;
+  font-size: 28px;
+  letter-spacing: 0.04em;
+  background: var(--steel);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  font-weight: 700;
+}
+.currency-wrap { display: flex; flex-direction: column; gap: 4px; min-width: 120px; }
+.currency-wrap select { width: auto; min-width: 120px; cursor: pointer; }
+
+/* Pay methods */
+.pay-methods {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 12px;
+  margin-top: 8px;
+}
+.pay-card {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 4px;
+  text-align: left;
+  padding: 16px;
+  border-radius: 16px;
+  border: 1px solid var(--line);
+  background: rgba(255,255,255,0.03);
+  color: var(--text);
+  cursor: pointer;
+  font: inherit;
+  transition: 0.2s ease;
+}
+.pay-card:hover { border-color: var(--line2); box-shadow: var(--glow); }
+.pay-card.active {
+  border-color: rgba(255,255,255,0.45);
+  background: rgba(255,255,255,0.1);
+  box-shadow: var(--glow);
+}
+.pay-icon { font-size: 22px; margin-bottom: 4px; font-weight: 800; }
+.topup-result {
+  margin-top: 18px;
+  padding: 16px;
+  border-radius: 14px;
+  border: 1px solid var(--line2);
+  background: rgba(255,255,255,0.04);
+}
+.topup-result a.btn { display: inline-block; text-decoration: none; margin-top: 10px; }
+.amount-row { margin: 8px 0 10px; }
+.amt-btn { min-width: 72px; }
+
+/* Mobile nav fix — show links */
+@media (max-width: 720px) {
+  .nav-links {
+    display: flex;
+    width: 100%;
+    order: 3;
+    overflow-x: auto;
+    padding-bottom: 4px;
+  }
+  .nav-links button { white-space: nowrap; font-size: 13px; padding: 8px 12px; }
+  .balance-card { flex-direction: column; align-items: stretch; }
+}
